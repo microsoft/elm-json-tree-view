@@ -1,0 +1,6 @@
+elm-stuff/
+
+# IntelliJ stuff
+.idea/
+elm-json-tree-view.iml
+
