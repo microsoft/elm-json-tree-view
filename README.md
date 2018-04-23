@@ -1,7 +1,8 @@
 # Elm JSON Tree View
 
-This library provides a JSON tree view. You feed it JSON, and it transforms it into
-interactive HTML.
+This library provides a JSON tree view. You feed it JSON, and it transforms it into interactive HTML.
+
+Try the [online demo](https://microsoft.github.io/elm-json-tree-view/example/index.html) ([source](https://github.com/Microsoft/elm-json-tree-view/blob/master/example/src/Main.elm))
 
 Features:
 
@@ -12,8 +13,7 @@ Features:
   
 ## Usage
 
-See the [docs](http://package.elm-lang.org/packages/Microsoft/elm-json-tree-view/latest) 
-or look at the example app in the `example` directory.
+See the [docs](http://package.elm-lang.org/packages/Microsoft/elm-json-tree-view/latest) or look at the example app's [source code](https://github.com/Microsoft/elm-json-tree-view/blob/master/example/src/Main.elm).
 
 But if you really insist on something super simple, here goes:
 ```elm
@@ -28,26 +28,8 @@ main =
 config = { onSelect = Nothing, toMsg = always () }
 ```
 
-Note that the above example is only meant to give you a taste. It does not wire everything
-up, which means that some things will be broken (i.e. expand/collapse). See the 
-[docs](http://package.elm-lang.org/packages/Microsoft/elm-json-tree-view/latest) and
-the example app for more details. 
+Note that the above example is only meant to give you a taste. It does not wire everything up, which means that some things will be broken (i.e. expand/collapse). See the [docs](http://package.elm-lang.org/packages/Microsoft/elm-json-tree-view/latest) and the example app for more details. 
 
-## Contributing
+## Thanks
 
-This project welcomes contributions and suggestions. Most contributions require you to
-agree to a Contributor License Agreement (CLA) declaring that you have the right to,
-and actually do, grant us the rights to use your contribution. For details, visit
-https://cla.microsoft.com.
-
-When you submit a pull request, a CLA-bot will automatically determine whether you need
-to provide a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the
-instructions provided by the bot. You will only need to do this once across all repositories using our CLA.
-
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/)
-or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
-
-## License
-
-MIT
+UI based on Gildas Lormeau's [JSONView](https://github.com/gildas-lormeau/JSONView-for-Chrome) Chrome extension.
