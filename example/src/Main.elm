@@ -1,6 +1,7 @@
 -- Copyright (c) Microsoft Corporation. All rights reserved.
 -- Licensed under the MIT License.
 
+
 module Main exposing (..)
 
 import Html exposing (..)
@@ -114,7 +115,7 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    div []
+    div [ style [ ( "margin", "20px" ) ] ]
         [ h1 [] [ text "JSON Tree View Example" ]
         , viewInputArea model
         , hr [] []
