@@ -79,7 +79,7 @@ type alias KeyPath =
 
 {-| Parse a JSON value as a tree.
 -}
-parseValue : Decode.Value -> Result String Node
+parseValue : Decode.Value -> Result Decode.Error Node
 parseValue json =
     let
         rootKeyPath =
@@ -89,15 +89,13 @@ parseValue json =
             Decode.map (annotate rootKeyPath) coreDecoder
     in
     Decode.decodeValue decoder json
-        |> Result.mapError Decode.errorToString
 
 
 {-| Parse a JSON string as a tree.
 -}
-parseString : String -> Result String Node
+parseString : String -> Result Decode.Error Node
 parseString string =
     Decode.decodeString Decode.value string
-        |> Result.mapError Decode.errorToString
         |> Result.andThen parseValue
 
 

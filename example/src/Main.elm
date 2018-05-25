@@ -5,6 +5,7 @@
 module Main exposing (..)
 
 import Browser
+import Json.Decode as Decode
 import Html exposing (..)
 import Html.Attributes exposing (checked, class, style, type_, value)
 import Html.Events exposing (onCheck, onClick, onInput)
@@ -32,7 +33,7 @@ exampleJsonInput =
 
 type alias Model =
     { jsonInput : String
-    , parseResult : Result String JsonTree.Node
+    , parseResult : Result Decode.Error JsonTree.Node
     , treeState : JsonTree.State
     , clickToSelectEnabled : Bool
     , selections : List JsonTree.KeyPath
@@ -167,7 +168,7 @@ viewJsonTree model =
                 JsonTree.view rootNode (config model.clickToSelectEnabled) model.treeState
 
             Err e ->
-                text ("Invalid JSON: " ++ e)
+                pre [] [ text ("Invalid JSON: " ++ Decode.errorToString e)]
         ]
 
 
