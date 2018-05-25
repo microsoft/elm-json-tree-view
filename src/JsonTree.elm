@@ -1,6 +1,7 @@
 -- Copyright (c) Microsoft Corporation. All rights reserved.
 -- Licensed under the MIT License.
 
+
 module JsonTree
     exposing
         ( Node
@@ -48,7 +49,6 @@ import Json.Decode as Decode exposing (Decoder)
 import Html exposing (Attribute, Html, button, div, li, span, text, ul)
 import Html.Attributes exposing (class, id, style)
 import Html.Events exposing (onClick)
-import InlineHover exposing (hover)
 import Set exposing (Set)
 
 
@@ -160,7 +160,7 @@ view : Node -> Config msg -> State -> Html msg
 view node config state =
     div
         [ style css.root ]
-        (viewNodeInternal 0 config node state)
+        (hoverStyles :: viewNodeInternal 0 config node state)
 
 
 {-| Configuration of the JSON tree view. It describes how to map events in the tree view
@@ -311,22 +311,20 @@ viewNodeInternal depth config node state =
 viewScalar : List ( String, String ) -> String -> Node -> Config msg -> List (Html msg)
 viewScalar someCss str node config =
     List.singleton <|
-        case config.onSelect of
-            Just onSelect ->
-                hover css.selectable
-                    span
-                    [ style someCss
-                    , id node.keyPath
-                    , onClick (onSelect node.keyPath)
-                    ]
-                    [ text str ]
+        span
+            ([ style someCss
+             , id node.keyPath
+             ]
+                ++ case config.onSelect of
+                    Just onSelect ->
+                        [ onClick (onSelect node.keyPath)
+                        , class selectableNodeClass
+                        ]
 
-            Nothing ->
-                span
-                    [ style someCss
-                    , id node.keyPath
-                    ]
-                    [ text str ]
+                    Nothing ->
+                        []
+            )
+            [ text str ]
 
 
 viewCollapser : Int -> Config msg -> (() -> State) -> String -> Html msg
@@ -449,3 +447,24 @@ css =
         , ( "cursor", "pointer" )
         ]
     }
+
+
+{-| Inserts a `<style>...</style>` element into the DOM in order to style
+CSS pseudo-elements such as hover. This is the technique used by elm-css.
+-}
+hoverStyles : Html msg
+hoverStyles =
+    let
+        selectableStyleString =
+            css.selectable
+                |> List.map (\( name, value ) -> name ++ ": " ++ value ++ ";")
+                |> String.join "\n"
+
+        styleBody =
+            "." ++ selectableNodeClass ++ ":hover {\n" ++ selectableStyleString ++ "\n}\n"
+    in
+        Html.node "style" [] [ text styleBody ]
+
+
+selectableNodeClass =
+    "selectableJsonTreeNode"
