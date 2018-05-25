@@ -4,17 +4,17 @@
 
 module JsonTree
     exposing
-        ( Node
-        , TaggedValue(..)
+        ( Config
         , KeyPath
-        , Config
+        , Node
         , State
-        , parseValue
-        , parseString
-        , view
+        , TaggedValue(..)
+        , collapseToDepth
         , defaultState
         , expandAll
-        , collapseToDepth
+        , parseString
+        , parseValue
+        , view
         )
 
 {-| This library provides a JSON tree view. You feed it JSON, and it transforms it into
@@ -45,10 +45,10 @@ Features:
 -}
 
 import Dict exposing (Dict)
-import Json.Decode as Decode exposing (Decoder)
 import Html exposing (Attribute, Html, button, div, li, span, text, ul)
 import Html.Attributes exposing (class, id, style)
 import Html.Events exposing (onClick)
+import Json.Decode as Decode exposing (Decoder)
 import Set exposing (Set)
 
 
@@ -88,7 +88,8 @@ parseValue json =
         decoder =
             Decode.map (annotate rootKeyPath) coreDecoder
     in
-        Decode.decodeValue decoder json
+    Decode.decodeValue decoder json
+        |> Result.mapError Decode.errorToString
 
 
 {-| Parse a JSON string as a tree.
@@ -96,6 +97,7 @@ parseValue json =
 parseString : String -> Result String Node
 parseString string =
     Decode.decodeString Decode.value string
+        |> Result.mapError Decode.errorToString
         |> Result.andThen parseValue
 
 
@@ -105,49 +107,49 @@ coreDecoder =
         makeNode v =
             { value = v, keyPath = "" }
     in
-        Decode.oneOf
-            [ Decode.map (makeNode << TString) Decode.string
-            , Decode.map (makeNode << TFloat) Decode.float
-            , Decode.map (makeNode << TBool) Decode.bool
-            , Decode.map (makeNode << TList) (Decode.list (Decode.lazy (\_ -> coreDecoder)))
-            , Decode.map (makeNode << TDict) (Decode.dict (Decode.lazy (\_ -> coreDecoder)))
-            , Decode.null (makeNode TNull)
-            ]
+    Decode.oneOf
+        [ Decode.map (makeNode << TString) Decode.string
+        , Decode.map (makeNode << TFloat) Decode.float
+        , Decode.map (makeNode << TBool) Decode.bool
+        , Decode.map (makeNode << TList) (Decode.list (Decode.lazy (\_ -> coreDecoder)))
+        , Decode.map (makeNode << TDict) (Decode.dict (Decode.lazy (\_ -> coreDecoder)))
+        , Decode.null (makeNode TNull)
+        ]
 
 
 annotate : String -> Node -> Node
 annotate pathSoFar node =
     let
         annotateList index val =
-            annotate (pathSoFar ++ "[" ++ toString index ++ "]") val
+            annotate (pathSoFar ++ "[" ++ String.fromInt index ++ "]") val
 
         annotateDict fieldName val =
             annotate (pathSoFar ++ "." ++ fieldName) val
     in
-        case node.value of
-            TString _ ->
-                { node | keyPath = pathSoFar }
+    case node.value of
+        TString _ ->
+            { node | keyPath = pathSoFar }
 
-            TFloat _ ->
-                { node | keyPath = pathSoFar }
+        TFloat _ ->
+            { node | keyPath = pathSoFar }
 
-            TBool _ ->
-                { node | keyPath = pathSoFar }
+        TBool _ ->
+            { node | keyPath = pathSoFar }
 
-            TNull ->
-                { node | keyPath = pathSoFar }
+        TNull ->
+            { node | keyPath = pathSoFar }
 
-            TList children ->
-                { node
-                    | keyPath = pathSoFar
-                    , value = TList (List.indexedMap annotateList children)
-                }
+        TList children ->
+            { node
+                | keyPath = pathSoFar
+                , value = TList (List.indexedMap annotateList children)
+            }
 
-            TDict dict ->
-                { node
-                    | keyPath = pathSoFar
-                    , value = TDict (Dict.map annotateDict dict)
-                }
+        TDict dict ->
+            { node
+                | keyPath = pathSoFar
+                , value = TDict (Dict.map annotateDict dict)
+            }
 
 
 
@@ -159,7 +161,7 @@ annotate pathSoFar node =
 view : Node -> Config msg -> State -> Html msg
 view node config state =
     div
-        [ style css.root ]
+        (styleList css.root)
         (hoverStyles :: viewNodeInternal 0 config node state)
 
 
@@ -184,7 +186,7 @@ type alias Config msg =
 
 
 {-| The state of the JSON tree view. Note that this is just the runtime state needed to
-implement things like expand/collapse--it is *not* the tree data itself.
+implement things like expand/collapse--it is _not_ the tree data itself.
 
 You should store the current state in your model.
 
@@ -215,29 +217,30 @@ collapseToDepthHelp maxDepth currentDepth node state =
                 (collapseToDepthHelp maxDepth (currentDepth + 1))
                 (if currentDepth >= maxDepth then
                     collapse node.keyPath state
+
                  else
                     state
                 )
                 children
     in
-        case node.value of
-            TString str ->
-                state
+    case node.value of
+        TString str ->
+            state
 
-            TFloat x ->
-                state
+        TFloat x ->
+            state
 
-            TBool bool ->
-                state
+        TBool bool ->
+            state
 
-            TNull ->
-                state
+        TNull ->
+            state
 
-            TList nodes ->
-                descend nodes
+        TList nodes ->
+            descend nodes
 
-            TDict dict ->
-                descend (Dict.values dict)
+        TDict dict ->
+            descend (Dict.values dict)
 
 
 {-| Expand all nodes
@@ -265,10 +268,10 @@ lazyStateChangeOnClick newStateThunk toMsg =
         force =
             \thunk -> thunk ()
     in
-        newStateThunk
-            |> Decode.succeed
-            |> Decode.map (force >> toMsg)
-            |> Html.Events.on "click"
+    newStateThunk
+        |> Decode.succeed
+        |> Decode.map (force >> toMsg)
+        |> Html.Events.on "click"
 
 
 expand : KeyPath -> State -> State
@@ -288,15 +291,24 @@ isCollapsed keyPath ((State hiddenPaths) as state) =
 
 viewNodeInternal : Int -> Config msg -> Node -> State -> List (Html msg)
 viewNodeInternal depth config node state =
+    let
+        boolToString bool =
+            -- workaround for https://github.com/avh4/elm-format/issues/209
+            if bool then
+                "true"
+
+            else
+                "false"
+    in
     case node.value of
         TString str ->
             viewScalar css.string ("\"" ++ str ++ "\"") node config
 
         TFloat x ->
-            viewScalar css.number (toString x) node config
+            viewScalar css.number (String.fromFloat x) node config
 
         TBool bool ->
-            viewScalar css.bool (toString bool) node config
+            viewScalar css.bool (boolToString bool) node config
 
         TNull ->
             viewScalar css.null "null" node config
@@ -312,17 +324,17 @@ viewScalar : List ( String, String ) -> String -> Node -> Config msg -> List (Ht
 viewScalar someCss str node config =
     List.singleton <|
         span
-            ([ style someCss
-             , id node.keyPath
-             ]
-                ++ case config.onSelect of
-                    Just onSelect ->
-                        [ onClick (onSelect node.keyPath)
-                        , class selectableNodeClass
-                        ]
+            ([ id node.keyPath ]
+                ++ styleList someCss
+                ++ (case config.onSelect of
+                        Just onSelect ->
+                            [ onClick (onSelect node.keyPath)
+                            , class selectableNodeClass
+                            ]
 
-                    Nothing ->
-                        []
+                        Nothing ->
+                            []
+                   )
             )
             [ text str ]
 
@@ -331,11 +343,12 @@ viewCollapser : Int -> Config msg -> (() -> State) -> String -> Html msg
 viewCollapser depth config newStateThunk displayText =
     if depth == 0 then
         text ""
+
     else
         span
-            [ style css.collapser
-            , lazyStateChangeOnClick newStateThunk config.toMsg
-            ]
+            (lazyStateChangeOnClick newStateThunk config.toMsg
+                :: styleList css.collapser
+            )
             [ text displayText ]
 
 
@@ -355,23 +368,25 @@ viewArray depth nodes keyPath config state =
         innerContent =
             if List.isEmpty nodes then
                 []
+
             else if isCollapsed keyPath state then
                 [ viewExpandButton depth keyPath config state
                 , text "…"
                 ]
+
             else
                 [ viewCollapseButton depth keyPath config state
                 , ul
-                    [ style css.ul ]
+                    (styleList css.ul)
                     (List.map viewListItem nodes)
                 ]
 
         viewListItem node =
             li
-                [ style css.li ]
+                (styleList css.li)
                 (List.append (viewNodeInternal (depth + 1) config node state) [ text "," ])
     in
-        [ text "[" ] ++ innerContent ++ [ text "]" ]
+    [ text "[" ] ++ innerContent ++ [ text "]" ]
 
 
 viewDict : Int -> Dict String Node -> KeyPath -> Config msg -> State -> List (Html msg)
@@ -380,28 +395,30 @@ viewDict depth dict keyPath config state =
         innerContent =
             if Dict.isEmpty dict then
                 []
+
             else if isCollapsed keyPath state then
                 [ viewExpandButton depth keyPath config state
                 , text "…"
                 ]
+
             else
                 [ viewCollapseButton depth keyPath config state
                 , ul
-                    [ style css.ul ]
+                    (styleList css.ul)
                     (List.map viewListItem (Dict.toList dict))
                 ]
 
         viewListItem ( fieldName, node ) =
             li
-                [ style css.li ]
-                ([ span [ style css.fieldName ] [ text fieldName ]
+                (styleList css.li)
+                ([ span (styleList css.fieldName) [ text fieldName ]
                  , text ": "
                  ]
-                    ++ (viewNodeInternal (depth + 1) config node state)
+                    ++ viewNodeInternal (depth + 1) config node state
                     ++ [ text "," ]
                 )
     in
-        [ text "{" ] ++ innerContent ++ [ text "}" ]
+    [ text "{" ] ++ innerContent ++ [ text "}" ]
 
 
 
@@ -449,6 +466,11 @@ css =
     }
 
 
+styleList : List ( String, String ) -> List (Html.Attribute msg)
+styleList styles =
+    List.map (\( name, value ) -> style name value) styles
+
+
 {-| Inserts a `<style>...</style>` element into the DOM in order to style
 CSS pseudo-elements such as hover. This is the technique used by elm-css.
 -}
@@ -463,7 +485,7 @@ hoverStyles =
         styleBody =
             "." ++ selectableNodeClass ++ ":hover {\n" ++ selectableStyleString ++ "\n}\n"
     in
-        Html.node "style" [] [ text styleBody ]
+    Html.node "style" [] [ text styleBody ]
 
 
 selectableNodeClass =
