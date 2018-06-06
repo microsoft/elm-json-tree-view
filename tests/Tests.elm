@@ -2,10 +2,9 @@ module Tests exposing (..)
 
 import Dict
 import Expect exposing (Expectation)
-import Fuzz exposing (Fuzzer, int, list, string)
+import Json.Encode as Encode
 import JsonTree exposing (Node, TaggedValue(..))
 import Test exposing (Test, describe, only, test)
-import Json.Encode as Encode
 
 
 suite : Test
@@ -29,7 +28,7 @@ suite =
                     |> Expect.equal (Ok (Node TNull ""))
         , test "parses lists" <|
             \_ ->
-                JsonTree.parseValue (Encode.list (List.map Encode.float [ 1, 2, 3 ]))
+                JsonTree.parseValue (Encode.list Encode.float [ 1, 2, 3 ])
                     |> Expect.equal
                         (Ok
                             { value =
@@ -64,16 +63,14 @@ suite =
         , test "parses lists of dictionaries" <|
             \_ ->
                 JsonTree.parseValue
-                    (Encode.list
-                        (List.map Encode.object
-                            [ [ ( "age", Encode.float 42 )
-                              , ( "name", Encode.string "Arnold" )
-                              ]
-                            , [ ( "age", Encode.float 99 )
-                              , ( "name", Encode.string "Lou" )
-                              ]
-                            ]
-                        )
+                    (Encode.list Encode.object
+                        [ [ ( "age", Encode.float 42 )
+                          , ( "name", Encode.string "Arnold" )
+                          ]
+                        , [ ( "age", Encode.float 99 )
+                          , ( "name", Encode.string "Lou" )
+                          ]
+                        ]
                     )
                     |> Expect.equal
                         (Ok
@@ -105,7 +102,7 @@ suite =
             \_ ->
                 JsonTree.parseValue
                     (Encode.object
-                        [ ( "names", Encode.list (List.map Encode.string [ "Arnold", "Lou" ]) ) ]
+                        [ ( "names", Encode.list Encode.string [ "Arnold", "Lou" ] ) ]
                     )
                     |> Expect.equal
                         (Ok
