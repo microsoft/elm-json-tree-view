@@ -16,6 +16,11 @@
     },
     "do-not-edit-this-by-hand": {
         "transitive-dependencies": {
+            "eeue56/elm-lazy": "1.0.1",
+            "eeue56/elm-lazy-list": "2.0.0",
+            "eeue56/elm-shrink": "2.0.0",
+            "elm/random": "1.0.0",
+            "elm/time": "1.0.0",
             "elm/url": "1.0.0",
             "elm/virtual-dom": "1.0.0"
         }
