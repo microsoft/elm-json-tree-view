@@ -4,6 +4,8 @@
 
 module Main exposing (..)
 
+import Browser
+import Json.Decode as Decode
 import Html exposing (..)
 import Html.Attributes exposing (checked, class, style, type_, value)
 import Html.Events exposing (onCheck, onClick, onInput)
@@ -31,23 +33,21 @@ exampleJsonInput =
 
 type alias Model =
     { jsonInput : String
-    , parseResult : Result String JsonTree.Node
+    , parseResult : Result Decode.Error JsonTree.Node
     , treeState : JsonTree.State
     , clickToSelectEnabled : Bool
     , selections : List JsonTree.KeyPath
     }
 
 
-init : ( Model, Cmd Msg )
+init : Model
 init =
-    ( { jsonInput = exampleJsonInput
-      , parseResult = JsonTree.parseString exampleJsonInput
-      , treeState = JsonTree.defaultState
-      , clickToSelectEnabled = False
-      , selections = []
-      }
-    , Cmd.none
-    )
+    { jsonInput = exampleJsonInput
+    , parseResult = JsonTree.parseString exampleJsonInput
+    , treeState = JsonTree.defaultState
+    , clickToSelectEnabled = False
+    , selections = []
+    }
 
 
 
@@ -64,49 +64,37 @@ type Msg
     | Selected JsonTree.KeyPath
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> Model
 update msg model =
     case msg of
         SetJsonInput string ->
-            ( { model | jsonInput = string }
-            , Cmd.none
-            )
+            { model | jsonInput = string }
 
         Parse ->
-            ( { model | parseResult = JsonTree.parseString model.jsonInput }
-            , Cmd.none
-            )
+            { model | parseResult = JsonTree.parseString model.jsonInput }
 
         SetTreeViewState state ->
-            ( { model | treeState = state }
-            , Cmd.none
-            )
+            { model | treeState = state }
 
         ExpandAll ->
-            ( { model | treeState = JsonTree.expandAll model.treeState }
-            , Cmd.none
-            )
+            { model | treeState = JsonTree.expandAll model.treeState }
 
         CollapseAll ->
             case model.parseResult of
                 Ok rootNode ->
-                    ( { model | treeState = JsonTree.collapseToDepth 1 rootNode model.treeState }
-                    , Cmd.none
-                    )
+                    { model | treeState = JsonTree.collapseToDepth 1 rootNode model.treeState }
 
                 Err _ ->
-                    ( model, Cmd.none )
+                    model
 
         ToggleSelectionMode ->
-            ( { model
+            { model
                 | clickToSelectEnabled = not model.clickToSelectEnabled
                 , selections = []
               }
-            , Cmd.none
-            )
 
         Selected keyPath ->
-            ( { model | selections = model.selections ++ [ keyPath ] }, Cmd.none )
+            { model | selections = model.selections ++ [ keyPath ] }
 
 
 
@@ -115,13 +103,14 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    div [ style [ ( "margin", "20px" ) ] ]
+    div [ style "margin" "20px" ]
         [ h1 [] [ text "JSON Tree View Example" ]
         , viewInputArea model
         , hr [] []
         , viewJsonTree model
         , if model.clickToSelectEnabled then
             viewSelections model
+
           else
             text ""
         ]
@@ -134,11 +123,9 @@ viewInputArea model =
         , textarea
             [ value model.jsonInput
             , onInput SetJsonInput
-            , style
-                [ ( "width", "400px" )
-                , ( "height", "200px" )
-                , ( "font-size", "14px" )
-                ]
+            , style "width" "400px"
+            , style "height" "200px"
+            , style "font-size" "14px"
             ]
             []
         , div [] [ button [ onClick Parse ] [ text "Parse" ] ]
@@ -167,21 +154,22 @@ viewJsonTree model =
             { onSelect =
                 if allowSelection then
                     Just Selected
+
                 else
                     Nothing
             , toMsg = SetTreeViewState
             }
     in
-        div []
-            [ h3 [] [ text "JSON Tree View" ]
-            , toolbar
-            , case model.parseResult of
-                Ok rootNode ->
-                    JsonTree.view rootNode (config model.clickToSelectEnabled) model.treeState
+    div []
+        [ h3 [] [ text "JSON Tree View" ]
+        , toolbar
+        , case model.parseResult of
+            Ok rootNode ->
+                JsonTree.view rootNode (config model.clickToSelectEnabled) model.treeState
 
-                Err e ->
-                    text ("Invalid JSON: " ++ e)
-            ]
+            Err e ->
+                pre [] [ text ("Invalid JSON: " ++ Decode.errorToString e)]
+        ]
 
 
 viewSelections : Model -> Html Msg
@@ -191,6 +179,7 @@ viewSelections model =
         , h3 [] [ text "Recently selected key-paths" ]
         , if List.isEmpty model.selections then
             text "No selections. Click any scalar value in the JSON tree view above to select it."
+
           else
             ul [] (List.map (\x -> li [] [ text x ]) model.selections)
         ]
@@ -200,11 +189,10 @@ viewSelections model =
 ---- PROGRAM ----
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
-    Html.program
-        { view = view
-        , init = init
+    Browser.sandbox
+        { init = init
+        , view = view
         , update = update
-        , subscriptions = always Sub.none
         }

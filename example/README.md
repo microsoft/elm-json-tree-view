@@ -4,6 +4,6 @@
 
 ```bash
 cd example
-elm-make src/Main.elm
+elm make src/Main.elm
 open index.html
 ```
