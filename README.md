@@ -2,7 +2,7 @@
 
 This library provides a JSON tree view. You feed it JSON, and it transforms it into interactive HTML.
 
-Try the [online demo](https://microsoft.github.io/elm-json-tree-view/example/index.html) ([source](https://github.com/Microsoft/elm-json-tree-view/blob/master/example/src/Main.elm))
+Try the [online demo](https://microsoft.github.io/elm-json-tree-view/example/index.html) ([source](example/src/Main.elm))
 
 Features:
 
@@ -13,7 +13,7 @@ Features:
   
 ## Usage
 
-See the [docs](http://package.elm-lang.org/packages/Microsoft/elm-json-tree-view/latest) or look at the example app's [source code](https://github.com/Microsoft/elm-json-tree-view/blob/master/example/src/Main.elm).
+See the [docs](http://package.elm-lang.org/packages/Microsoft/elm-json-tree-view/latest) or look at the example app's [source code](example/src/Main.elm).
 
 But if you really insist on something super simple, here goes:
 ```elm
@@ -28,7 +28,7 @@ main =
 config = { onSelect = Nothing, toMsg = always () }
 ```
 
-Note that the above example is only meant to give you a taste. It does not wire everything up, which means that some things will be broken (i.e. expand/collapse). See the [docs](http://package.elm-lang.org/packages/Microsoft/elm-json-tree-view/latest) and the example app for more details. 
+Note that the above example is only meant to give you a taste. It does not wire everything up, which means that some things will be broken (i.e. expand/collapse). See the [docs](http://package.elm-lang.org/packages/Microsoft/elm-json-tree-view/latest) and the [example app](example/src/Main.elm) for more details. 
 
 ## Thanks
 
