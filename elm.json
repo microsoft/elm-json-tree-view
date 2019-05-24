@@ -3,7 +3,7 @@
     "name": "Microsoft/elm-json-tree-view",
     "summary": "Shows JSON data as an expandable HTML tree",
     "license": "MIT",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "exposed-modules": [
         "JsonTree"
     ],
